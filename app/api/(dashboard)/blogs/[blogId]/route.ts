@@ -5,16 +5,21 @@ import User from "@/lib/models/user";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
-export const GET = async (req: Request, {params} : {
-  params: {
-    blogId: string;
-  }
-}) => {
+export const GET = async (
+	req: Request,
+	{
+		params,
+	}: {
+		params: {
+			blogId: string;
+		};
+	}
+) => {
 	try {
 		const { searchParams } = new URL(req.url);
 		const userId = searchParams.get("userId");
 		const categoryId = searchParams.get("categoryId");
-    const blogId = params.blogId;
+		const blogId = params.blogId;
 
 		if (!userId || !Types.ObjectId.isValid(userId)) {
 			return new NextResponse("No User ID found!", {
@@ -28,7 +33,7 @@ export const GET = async (req: Request, {params} : {
 			});
 		}
 
-    if (!blogId || !Types.ObjectId.isValid(blogId)) {
+		if (!blogId || !Types.ObjectId.isValid(blogId)) {
 			return new NextResponse("No Blog ID found!", {
 				status: 400,
 			});
@@ -50,14 +55,12 @@ export const GET = async (req: Request, {params} : {
 			});
 		}
 
-		const blog = await Blog.findOne(
-      {
-        _id: blogId,
-        user: userId,
-        category: categoryId
-      }
-    );
-    if (!blog) {
+		const blog = await Blog.findOne({
+			_id: blogId,
+			user: userId,
+			category: categoryId,
+		});
+		if (!blog) {
 			return new NextResponse("Blog not found in the DB!", {
 				status: 400,
 			});
@@ -79,17 +82,22 @@ export const GET = async (req: Request, {params} : {
 	}
 };
 
-export const PATCH = async (req: Request, {params} : {
-  params: {
-    blogId: string;
-  }
-}) => {
+export const PATCH = async (
+	req: Request,
+	{
+		params,
+	}: {
+		params: {
+			blogId: string;
+		};
+	}
+) => {
 	try {
 		const { searchParams } = new URL(req.url);
 		const userId = searchParams.get("userId");
 		const categoryId = searchParams.get("categoryId");
-    const blogId = params.blogId;
-		const {title, description} = await req.json();
+		const blogId = params.blogId;
+		const { title, description } = await req.json();
 
 		if (!userId || !Types.ObjectId.isValid(userId)) {
 			return new NextResponse("No User ID found!", {
@@ -103,7 +111,7 @@ export const PATCH = async (req: Request, {params} : {
 			});
 		}
 
-    if (!blogId || !Types.ObjectId.isValid(blogId)) {
+		if (!blogId || !Types.ObjectId.isValid(blogId)) {
 			return new NextResponse("No Blog ID found!", {
 				status: 400,
 			});
@@ -131,14 +139,12 @@ export const PATCH = async (req: Request, {params} : {
 			});
 		}
 
-		const blog = await Blog.findOne(
-      {
-        _id: blogId,
-        user: userId,
-        category: categoryId
-      }
-    );
-    if (!blog) {
+		const blog = await Blog.findOne({
+			_id: blogId,
+			user: userId,
+			category: categoryId,
+		});
+		if (!blog) {
 			return new NextResponse("Blog not found in the DB!", {
 				status: 400,
 			});
@@ -148,24 +154,76 @@ export const PATCH = async (req: Request, {params} : {
 			blogId,
 			{ title, description },
 			{ new: true }
-		)
+		);
 
 		if (!updatedBlog) {
-			return new NextResponse("Something went wrong, please try again to update the blog", {
+			return new NextResponse(
+				"Something went wrong, please try again to update the blog",
+				{
+					status: 400,
+				}
+			);
+		}
+
+		return new NextResponse(
+			JSON.stringify({
+				message: "Successful Updating the Blog!",
+				updatedBlog,
+			}),
+			{
+				status: 200,
+			}
+		);
+	} catch (error: // eslint-disable-next-line
+	any) {
+		return new NextResponse("Error in updating blog" + error.message, {
+			status: 500,
+		});
+	}
+};
+
+export const DELETE = async (
+	req: Request,
+	{
+		params,
+	}: {
+		params: {
+			blogId: string;
+		};
+	}
+) => {
+	try {
+		const { searchParams } = new URL(req.url);
+		const userId = searchParams.get("userId");
+		const blogId = params.blogId;
+
+		if (!userId || !Types.ObjectId.isValid(userId)) {
+			return new NextResponse("No User ID found!", {
 				status: 400,
 			});
 		}
 
-		return new NextResponse(JSON.stringify({
-			message: 'Successful Updating the Blog!',
-			updatedBlog
-		}), {
-			status: 200,
-		});
-	} catch (error: // eslint-disable-next-line
-		any) {
-			return new NextResponse("Error in fetching blogs" + error.message, {
-				status: 500,
+		if (!blogId || !Types.ObjectId.isValid(blogId)) {
+			return new NextResponse("No Blog ID found!", {
+				status: 400,
 			});
 		}
-}
+
+		const deletedBlog = await Blog.findByIdAndDelete(blogId);
+
+		return new NextResponse(
+			JSON.stringify({
+				message: "Deleted a Blog Successfully",
+				deletedBlog,
+			}),
+			{
+				status: 200,
+			}
+		);
+	} catch (error: // eslint-disable-next-line
+	any) {
+		return new NextResponse("Error in deleting a blog" + error.message, {
+			status: 500,
+		});
+	}
+};
