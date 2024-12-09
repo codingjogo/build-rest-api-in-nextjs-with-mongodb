@@ -209,6 +209,8 @@ export const DELETE = async (
 			});
 		}
 
+		await connect();
+
 		const deletedBlog = await Blog.findByIdAndDelete(blogId);
 
 		return new NextResponse(
