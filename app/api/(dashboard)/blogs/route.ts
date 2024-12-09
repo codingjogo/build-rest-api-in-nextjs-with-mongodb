@@ -10,6 +10,11 @@ export const GET = async (req: Request) => {
 		const { searchParams } = new URL(req.url);
 		const userId = searchParams.get("userId");
 		const categoryId = searchParams.get("categoryId");
+		const searchKeywords = searchParams.get('keywords')
+		const startDate = searchParams.get('startDate');
+		const endDate = searchParams.get('endDate');
+		const page = Number(searchParams.get('page')) || 1;
+		const limit = Number(searchParams.get('limit')) || 10;
 
 		if (!userId || !Types.ObjectId.isValid(userId)) {
 			return new NextResponse("No User ID found!", {
@@ -39,14 +44,42 @@ export const GET = async (req: Request) => {
 			});
 		}
 
-    // TODO
 		// eslint-disable-next-line
 		const filter: any = {
 			user: userId,
 			category: categoryId,
 		};
 
-		const blogs = await Blog.find(filter);
+		if (searchKeywords) {
+			filter.$or = [
+				{
+					title: { $regex: searchKeywords, $options: "i" },
+				},
+				{
+					desccription: { $regex: searchKeywords, $options: "i" },
+				}
+			]
+		} else if (startDate && endDate) {
+			filter.createdAt ={
+				$gte: new Date(startDate),
+				$lte: new Date(endDate),
+			}
+		} else if (startDate) {
+			filter.createdAt ={
+				$gte: new Date(startDate),
+			}
+		} else if (endDate) {
+			filter.createdAt ={
+				$lte: new Date(endDate),
+			}
+		}
+
+		const skip = (page - 1) * limit;
+
+		const blogs = await Blog.find(filter)
+		.sort({createAt: "asc"})
+		.skip(skip)
+		.limit(limit)
 
 		return new NextResponse(
 			JSON.stringify({
