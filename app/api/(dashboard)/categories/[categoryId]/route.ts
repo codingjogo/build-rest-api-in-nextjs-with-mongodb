@@ -5,6 +5,7 @@ DELETE by Category ID with params /dashboard/categories/[categoryId]
 /dashboard/categories/[categoryId]?userId=123123
 */
 
+import connect from "@/lib/db";
 import Category from "@/lib/models/category";
 import User from "@/lib/models/user";
 import { Types } from "mongoose";
@@ -49,6 +50,8 @@ export const PATCH = async (req: Request, {params} : {
         }
       );
     }
+
+    await connect();
 
     const user = await User.findById(userId);
 
@@ -95,6 +98,81 @@ export const PATCH = async (req: Request, {params} : {
     any) {
       return new NextResponse(
         "Error in updating a category" + error.message,
+        {
+          status: 500,
+        }
+      );
+    }
+}
+
+export const DELETE = async (req: Request, {params} : {
+  params: {categoryId: string; }
+}) => {
+  try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId');
+
+    if (!userId || !Types.ObjectId.isValid(userId)) {
+      return new NextResponse(
+        "User Not Found!",
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const categoryId = params.categoryId; // to update categodyId from dynamic route [categoryId]
+
+    if (!categoryId || !Types.ObjectId.isValid(categoryId)) {
+      return new NextResponse(
+        "Category ID Not Found or Invalid ID!",
+        {
+          status: 400,
+        }
+      );
+    }
+
+    await connect();
+
+    const user = await User.findById(userId);
+
+    if (!user || !Types.ObjectId.isValid(userId)) {
+      return new NextResponse(
+        "User Not Found in the DB or Invalid ID!",
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const category = await Category.findOne(
+      {_id: categoryId, user: userId }
+    )
+
+    if (!category) {
+      return new NextResponse(
+        "Category by User is Not Found or Invalid ID!",
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const deletedCategory = await Category.findByIdAndDelete(categoryId)
+
+    return new NextResponse(
+      JSON.stringify({
+        message: "Successfull in deleting a category",
+        deletedCategory
+      }),
+      {
+        status: 200,
+      }
+    );
+  } catch (error: // eslint-disable-next-line
+    any) {
+      return new NextResponse(
+        "Error in deleting a category" + error.message,
         {
           status: 500,
         }
